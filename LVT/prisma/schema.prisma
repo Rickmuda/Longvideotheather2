@@ -1,0 +1,24 @@
+// prisma/schema.prisma
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id       Int      @id @default(autoincrement())
+  email    String   @unique
+  password String
+}
+
+model Video {
+  id        Int      @id @default(autoincrement())
+  title     String
+  creator   String
+  url       String
+  thumbnail String
+  category  String
+}
