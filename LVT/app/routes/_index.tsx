@@ -1,65 +1,112 @@
-// app/routes/index.tsx
-import { useState, useEffect } from "react";
-import { Link, Form, useNavigate, useLoaderData } from "@remix-run/react";
-import { getUserId } from "../utils/auth.server";
-import Videoessays from "./videos";
-import Explenation from "./explenation";
-import styles from "../styles/styles.css";
+// app/routes/videos.tsx
+import { json, LoaderFunction, ActionFunction } from "@remix-run/node";
+import { useLoaderData, useActionData, Form } from "@remix-run/react";
+import { useState } from "react";
+import axios from "axios";
+import { prisma } from "../../prisma/prisma.server";
+import { requireUserId } from "~/utils/auth.server";
 
-export let loader = async ({ request }) => {
-  const userId = await getUserId(request);
-  return { userId };
+const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
+
+export const loader: LoaderFunction = async () => {
+  const videos = await prisma.video.findMany();
+  return json(videos);
 };
 
-export const links = () => {
-  return [{ rel: "stylesheet", href: styles }];
+export const action: ActionFunction = async ({ request }) => {
+  await requireUserId(request);
+
+  const formData = await request.formData();
+  const url = formData.get("url");
+  const category = formData.get("category");
+
+  if (typeof url !== "string" || typeof category !== "string") {
+    return json({ error: "Invalid form data" }, { status: 400 });
+  }
+
+  let videoId = url.split("v=")[1];
+  const ampersandPosition = videoId.indexOf("&");
+  if (ampersandPosition !== -1) {
+    videoId = videoId.substring(0, ampersandPosition);
+  }
+
+  try {
+    const response = await axios.get(
+      `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&key=${YOUTUBE_API_KEY}&part=snippet`
+    );
+
+    const { title, channelTitle: creator, thumbnails } = response.data.items[0].snippet;
+    const thumbnail = thumbnails.high.url;
+
+    const video = await prisma.video.create({
+      data: { title, creator, url, thumbnail, category },
+    });
+
+    return json(video);
+  } catch (error) {
+    console.error("Error fetching video details:", error);
+    return json({ error: "Failed to fetch video details" }, { status: 500 });
+  }
 };
 
-export default function Index() {
-  const { userId } = useLoaderData();
-  const [page, setPage] = useState("essays");
-  const [data, setData] = useState(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const navigate = useNavigate();
+// Define the interface for props
+interface VideosProps {
+  setPage: (page: "essays" | "explenation") => void; 
+  setData: (data: unknown) => void;
+}
 
-  useEffect(() => {
-    setIsLoggedIn(userId !== null);
-  }, [userId]);
+interface Video {
+  id: string;
+  title: string;
+  creator: string;
+  url: string;
+  thumbnail: string;
+  category: string;
+}
 
-  const handleLogout = async () => {
-    await fetch("/logout", { method: "POST" });
-    setIsLoggedIn(false);
-    navigate("/");
-  };
+// Define the interface for action data
+interface ActionData {
+  error?: string; // Optional error string
+}
+
+export default function Videos({ setPage, setData }: VideosProps) {
+  const videos = useLoaderData<Video[]>();
+  const actionData = useActionData<ActionData>(); // Use the defined ActionData type
+  const [category, setCategory] = useState("Videogames");
 
   return (
     <div>
-      <nav>
-        <ul>
-          <li>
-            {isLoggedIn ? (
-              <button className="login-logout-button" onClick={handleLogout}>
-                Logout
-              </button>
-            ) : (
-              <Link to="/login" className="login-logout-button">
-                Login
-              </Link>
-            )}
-          </li>
-        </ul>
-      </nav>
+      <h1>Long Video Theater</h1>
       <div>
-        {page === "essays" && <Videoessays setPage={setPage} setData={setData} />}
-        {page === "explenation" && data && <Explenation setPage={setPage} Data={data} />}
+        <button onClick={() => setCategory("Videogames")}>Videogames</button>
+        <button onClick={() => setCategory("Anime/Manga")}>Anime/Manga</button>
+        <button onClick={() => setCategory("Alternate Reality Game")}>Alternate Reality Game</button>
+        <button onClick={() => setCategory("Digital")}>Digital Horror</button>
       </div>
-      {isLoggedIn && (
-        <div>
-          <Link to="/addVideo" className="add-video-button">
-            Add Video
-          </Link>
-        </div>
-      )}
+      <ul>
+        {videos && videos.length > 0 ? (
+          videos.filter(video => video.category === category).map(video => (
+            <li key={video.id}>
+              <h2>{video.title}</h2>
+              <div className='thumbnail'>
+                <button onClick={() => { setPage("explenation"); setData(video); }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+                  <a href={video.url} target="_blank" rel="noopener noreferrer">
+                    <img src={video.thumbnail} alt={video.title} />
+                  </a>
+                </button>
+              </div>
+            </li>
+          ))
+        ) : (
+          <p>No videos found.</p>
+        )}
+      </ul>
+      <Form method="post">
+        <input type="text" name="url" placeholder="YouTube Video URL" />
+        <input type="text" name="category" placeholder="Category" />
+        <button type="submit">Add Video</button>
+      </Form>
+      {actionData?.error && <p>{actionData.error}</p>} {/* Now it knows actionData might have an error */}
     </div>
   );
 }

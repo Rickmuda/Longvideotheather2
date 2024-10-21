@@ -4,19 +4,19 @@ import { Form, useActionData } from "@remix-run/react";
 import { requireUserId } from "../utils/auth.server";
 import { prisma } from "../../prisma/prisma.server";
 import axios from "axios";
-import styles from "../styles/styles.css";
+
 
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
-export const links = () => {
-  return [{ rel: "stylesheet", href: styles }];
-};
 
-export let action: ActionFunction = async ({ request }) => {
+export const action: ActionFunction = async ({ request }) => {
   await requireUserId(request);
 
+  // eslint-disable-next-line prefer-const
   let formData = await request.formData();
+  // eslint-disable-next-line prefer-const
   let url = formData.get("url");
+  // eslint-disable-next-line prefer-const
   let category = formData.get("category");
 
   if (typeof url !== "string" || typeof category !== "string") {
@@ -37,7 +37,8 @@ export let action: ActionFunction = async ({ request }) => {
     const { title, channelTitle: creator, thumbnails } = response.data.items[0].snippet;
     const thumbnail = thumbnails.high.url;
 
-    let video = await prisma.video.create({
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const video = await prisma.video.create({
       data: { title, creator, url, thumbnail, category },
     });
 
@@ -49,7 +50,7 @@ export let action: ActionFunction = async ({ request }) => {
 };
 
 export default function AddVideo() {
-  const actionData = useActionData();
+  const actionData = useActionData<{ error?: string }>();
   return (
     <div>
       <h1>Add a New Video</h1>

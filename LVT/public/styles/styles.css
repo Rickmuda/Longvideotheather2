@@ -1,10 +1,13 @@
 @font-face {
-    font-family: 'UAV-OSD-Mono';
-    src: url('../fonts/UAV-OSD-Mono.ttf') format('truetype');
+    font-family: 'Mono';
+    src: url('./fonts/UAV-OSD-Mono.ttf') format('truetype'); /* Adjust the path to the font */
+    font-display: swap; /* Optional: Use this to improve loading performance */
 }
+
+
 body {
     background-color: #381a3e;
-    font-family: 'UAV-OSD-Mono', sans-serif;
+    font-family: 'Mono', sans-serif;
     text-align: center;
     text-decoration: none;
 }
@@ -36,7 +39,6 @@ button {
     color: #381a3e;
     padding: 15px 32px;
     text-align: center;
-    text-decoration: none;
     display: inline-block;
     font-size: 16px;
     margin: 15px 20px;
@@ -45,7 +47,7 @@ button {
     color: #8b506d;
     font-size: 10px;
     font-weight: bold;
-    font-family: 'UAV-OSD-Mono', sans-serif;
+    font-family: 'Mono', sans-serif;
     border: 2px solid #f890a8;
 }
 
@@ -56,53 +58,37 @@ button:hover {
     font-size: 10.5px;
 }
 
-/* Login/Logout Button Styles */
-.login-logout-button {
-    position: fixed;
-    bottom: 20px;
-    left: 20px;
-    background-color: #f6edc1;
-    color: #381a3e;
-    padding: 10px 20px;
-    text-align: center;
-    text-decoration: none;
-    font-size: 16px;
-    border-radius: 4px;
-    font-family: 'UAV-OSD-Mono', sans-serif;
-    border: 2px solid #f890a8;
-    cursor: pointer;
-}
-
-.login-logout-button:hover {
-    background-color: #f890a8;
-    color: #381a3e;
-    border: 3px solid #f890a8;
-}
-
-/* Add Video Button Styles */
+.login-logout-button,
 .add-video-button {
     position: fixed;
-    bottom: 20px;
-    right: 20px;
     background-color: #f6edc1;
     color: #381a3e;
     padding: 10px 20px;
     text-align: center;
-    text-decoration: none;
     font-size: 16px;
     border-radius: 4px;
-    font-family: 'UAV-OSD-Mono', sans-serif;
+    font-family: 'Mono', sans-serif;
     border: 2px solid #f890a8;
     cursor: pointer;
 }
 
+.login-logout-button {
+    bottom: 20px;
+    left: 20px;
+}
+
+.add-video-button {
+    bottom: 20px;
+    right: 20px;
+}
+
+.login-logout-button:hover,
 .add-video-button:hover {
     background-color: #f890a8;
     color: #381a3e;
     border: 3px solid #f890a8;
 }
 
-/* Login Form Styles */
 .login-form {
     background-color: #4a2c53;
     padding: 20px;
@@ -126,7 +112,7 @@ button:hover {
     border: 1px solid #8b506d;
     border-radius: 4px;
     font-size: 16px;
-    font-family: 'UAV-OSD-Mono', sans-serif;
+    font-family: 'Mono', sans-serif;
 }
 
 .login-form button {
@@ -138,7 +124,7 @@ button:hover {
     border-radius: 4px;
     font-size: 16px;
     cursor: pointer;
-    font-family: 'UAV-OSD-Mono', sans-serif;
+    font-family: 'Mono', sans-serif;
 }
 
 .login-form button:hover {

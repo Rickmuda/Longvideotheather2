@@ -8,26 +8,39 @@ import { requireUserId } from "~/utils/auth.server";
 
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
-export let loader: LoaderFunction = async ({ request }) => {
-  let videos = await prisma.video.findMany();
+interface Video {
+  id: string;
+  title: string;
+  creator: string;
+  url: string;
+  thumbnail: string;
+  category: string;
+}
+
+interface ActionData {
+  error?: string;
+}
+
+export const loader: LoaderFunction = async () => {
+  const videos = await prisma.video.findMany();
   return json(videos);
 };
 
-export let action: ActionFunction = async ({ request }) => {
+export const action: ActionFunction = async ({ request }) => {
   await requireUserId(request);
 
-  let formData = await request.formData();
-  let url = formData.get("url");
-  let category = formData.get("category");
+  const formData = await request.formData();
+  const url = formData.get("url");
+  const category = formData.get("category");
 
   if (typeof url !== "string" || typeof category !== "string") {
     return json({ error: "Invalid form data" }, { status: 400 });
   }
 
   let videoId = url.split("v=")[1];
-  const ampersandPosition = videoId.indexOf("&");
+  const ampersandPosition = videoId?.indexOf("&");
   if (ampersandPosition !== -1) {
-    videoId = videoId.substring(0, ampersandPosition);
+    videoId = videoId?.substring(0, ampersandPosition);
   }
 
   try {
@@ -38,7 +51,7 @@ export let action: ActionFunction = async ({ request }) => {
     const { title, channelTitle: creator, thumbnails } = response.data.items[0].snippet;
     const thumbnail = thumbnails.high.url;
 
-    let video = await prisma.video.create({
+    const video = await prisma.video.create({
       data: { title, creator, url, thumbnail, category },
     });
 
@@ -49,9 +62,14 @@ export let action: ActionFunction = async ({ request }) => {
   }
 };
 
-export default function Videos({ setPage, setData }) {
-  const videos = useLoaderData();
-  const actionData = useActionData();
+interface VideosProps {
+  setPage: (page: string) => void;
+  setData: (data: unknown) => void;
+}
+
+export default function Videos({ setPage, setData }: VideosProps) {
+  const videos = useLoaderData<Video[]>();
+  const actionData = useActionData<ActionData>();
   const [category, setCategory] = useState("Videogames");
 
   return (
@@ -61,22 +79,35 @@ export default function Videos({ setPage, setData }) {
         <button onClick={() => setCategory("Videogames")}>Videogames</button>
         <button onClick={() => setCategory("Anime/Manga")}>Anime/Manga</button>
         <button onClick={() => setCategory("Alternate Reality Game")}>Alternate Reality Game</button>
-        <button onClick={() => setCategory("Digital")}>Digital Horror</button>
+        <button onClick={() => setCategory("Digital Horror")}>Digital Horror</button>
       </div>
       <ul>
         {videos && videos.length > 0 ? (
-          videos.filter(video => video.category === category).map(video => (
-            <li key={video.id}>
-              <h2>{video.title}</h2>
-              <div className='thumbnail'>
-                <div onClick={() => { setPage("explenation"); setData(video) }}>
-                  <a href={video.url} target="_blank" rel="noopener noreferrer">
-                    <img src={video.thumbnail} alt={video.title} />
-                  </a>
+          videos
+            .filter((video) => video.category === category)
+            .map((video) => (
+              <li key={video.id}>
+                <h2>{video.title}</h2>
+                <div className="thumbnail">
+                  <button
+                    onClick={() => {
+                      setPage("explenation");
+                      setData(video);
+                    }}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      padding: 0,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <a href={video.url} target="_blank" rel="noopener noreferrer">
+                      <img src={video.thumbnail} alt={video.title} />
+                    </a>
+                  </button>
                 </div>
-              </div>
-            </li>
-          ))
+              </li>
+            ))
         ) : (
           <p>No videos found.</p>
         )}

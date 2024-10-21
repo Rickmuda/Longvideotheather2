@@ -1,5 +1,18 @@
 // app/routes/explenation.tsx
-export default function Explenation({ setPage, Data }) {
+// eslint-disable-next-line react/prop-types
+interface DataProps {
+  url: string;
+  thumbnail: string;
+  title: string;
+  creator: string;
+}
+
+interface ExplenationProps {
+  setPage: (page: string) => void;
+  Data: DataProps;
+}
+
+export default function Explenation({ setPage, Data }: ExplenationProps) {
   return (
     <div>
       <a href={Data.url} target="_blank" rel="noreferrer">

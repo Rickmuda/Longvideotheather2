@@ -62,3 +62,16 @@ export async function logout(request: Request) {
     },
   });
 }
+
+export async function createUser(email: string, password: string) {
+  const hashedPassword = await bcrypt.hash(password, 10); // Hash the password
+  const user = await prisma.user.create({
+    data: {
+      email,
+      password: hashedPassword, // Store the hashed password
+    },
+  });
+  console.log(`User created: ${email}`);
+  return user;
+}
+
