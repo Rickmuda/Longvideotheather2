@@ -8,19 +8,6 @@ import { requireUserId } from "~/utils/auth.server";
 
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
-interface Video {
-  id: string;
-  title: string;
-  creator: string;
-  url: string;
-  thumbnail: string;
-  category: string;
-}
-
-interface ActionData {
-  error?: string;
-}
-
 export const loader: LoaderFunction = async () => {
   const videos = await prisma.video.findMany();
   return json(videos);
@@ -33,20 +20,30 @@ export const action: ActionFunction = async ({ request }) => {
   const url = formData.get("url");
   const category = formData.get("category");
 
-  if (typeof url !== "string" || typeof category !== "string") {
+  // Check if URL and category are valid
+  if (typeof url !== "string" || !url.trim() || typeof category !== "string") {
     return json({ error: "Invalid form data" }, { status: 400 });
   }
 
+  // Check if the URL is a valid YouTube link
   let videoId = url.split("v=")[1];
-  const ampersandPosition = videoId?.indexOf("&");
+  if (!videoId) {
+    return json({ error: "Invalid YouTube URL" }, { status: 400 });
+  }
+  
+  const ampersandPosition = videoId.indexOf("&");
   if (ampersandPosition !== -1) {
-    videoId = videoId?.substring(0, ampersandPosition);
+    videoId = videoId.substring(0, ampersandPosition);
   }
 
   try {
     const response = await axios.get(
       `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&key=${YOUTUBE_API_KEY}&part=snippet`
     );
+
+    if (!response.data.items.length) {
+      return json({ error: "No video found with that ID" }, { status: 404 });
+    }
 
     const { title, channelTitle: creator, thumbnails } = response.data.items[0].snippet;
     const thumbnail = thumbnails.high.url;
@@ -63,8 +60,21 @@ export const action: ActionFunction = async ({ request }) => {
 };
 
 interface VideosProps {
-  setPage: (page: string) => void;
+  setPage: (page: "essays" | "explenation") => void; 
   setData: (data: unknown) => void;
+}
+
+interface Video {
+  id: string;
+  title: string;
+  creator: string;
+  url: string;
+  thumbnail: string;
+  category: string;
+}
+
+interface ActionData {
+  error?: string;
 }
 
 export default function Videos({ setPage, setData }: VideosProps) {
@@ -75,48 +85,49 @@ export default function Videos({ setPage, setData }: VideosProps) {
   return (
     <div>
       <h1>Long Video Theater</h1>
+      
+      {/* Category Buttons */}
       <div>
         <button onClick={() => setCategory("Videogames")}>Videogames</button>
         <button onClick={() => setCategory("Anime/Manga")}>Anime/Manga</button>
         <button onClick={() => setCategory("Alternate Reality Game")}>Alternate Reality Game</button>
-        <button onClick={() => setCategory("Digital Horror")}>Digital Horror</button>
+        <button onClick={() => setCategory("Digital")}>Digital Horror</button>
       </div>
-      <ul>
+      
+      {/* Add Video Form */}
+      <Form method="post">
+        <input type="text" name="url" placeholder="YouTube Video URL" required />
+        
+        <select name="category" required>
+          <option value="" disabled selected>Select a category</option>
+          <option value="Videogames">Videogames</option>
+          <option value="Anime/Manga">Anime/Manga</option>
+          <option value="Alternate Reality Game">Alternate Reality Game</option>
+          <option value="Digital">Digital Horror</option>
+        </select>
+        
+        <button type="submit">Add Video</button>
+      </Form>
+
+      {/* Video Grid */}
+      <div className="video-grid">
         {videos && videos.length > 0 ? (
-          videos
-            .filter((video) => video.category === category)
-            .map((video) => (
-              <li key={video.id}>
-                <h2>{video.title}</h2>
-                <div className="thumbnail">
-                  <button
-                    onClick={() => {
-                      setPage("explenation");
-                      setData(video);
-                    }}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      padding: 0,
-                      cursor: "pointer",
-                    }}
-                  >
-                    <a href={video.url} target="_blank" rel="noopener noreferrer">
-                      <img src={video.thumbnail} alt={video.title} />
-                    </a>
-                  </button>
-                </div>
-              </li>
-            ))
+          videos.filter(video => video.category === category).map(video => (
+            <div key={video.id} className="video-item">
+              <h2>{video.title}</h2>
+              <div className='thumbnail'>
+                <button onClick={() => { setPage("explenation"); setData(video); }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+                  <a href={video.url} target="_blank" rel="noopener noreferrer">
+                    <img src={video.thumbnail} alt={video.title} />
+                  </a>
+                </button>
+              </div>
+            </div>
+          ))
         ) : (
           <p>No videos found.</p>
         )}
-      </ul>
-      <Form method="post">
-        <input type="text" name="url" placeholder="YouTube Video URL" />
-        <input type="text" name="category" placeholder="Category" />
-        <button type="submit">Add Video</button>
-      </Form>
+      </div>
       {actionData?.error && <p>{actionData.error}</p>}
     </div>
   );

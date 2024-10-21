@@ -1,21 +1,24 @@
+/* Font face */
 @font-face {
     font-family: 'Mono';
-    src: url('./fonts/UAV-OSD-Mono.ttf') format('truetype'); /* Adjust the path to the font */
-    font-display: swap; /* Optional: Use this to improve loading performance */
+    src: url('./fonts/UAV-OSD-Mono.ttf') format('truetype');
+    font-display: swap;
 }
 
-
+/* Body styling */
 body {
     background-color: #381a3e;
     font-family: 'Mono', sans-serif;
     text-align: center;
-    text-decoration: none;
+    margin: 0; /* Ensure no default margins */
 }
 
+/* Heading styles */
 h1 {
     color: #d6d4cb;
     font-size: 50px;
     font-weight: bold;
+    margin-top: 60px; /* Add space below the fixed form */
 }
 
 h2 {
@@ -24,6 +27,7 @@ h2 {
     font-size: 25px;
 }
 
+/* Image styles */
 img {
     border: 4px solid #f890a8;
     width: 340px;
@@ -34,9 +38,10 @@ img:hover {
     border: 3px solid #f6edc1;
 }
 
+/* Button styles */
 button {
     background-color: #f6edc1;
-    color: #381a3e;
+    color: #8b506d; /* Adjusted to be consistent with your theme */
     padding: 15px 32px;
     text-align: center;
     display: inline-block;
@@ -44,20 +49,69 @@ button {
     margin: 15px 20px;
     cursor: pointer;
     border-radius: 4px;
-    color: #8b506d;
-    font-size: 10px;
+    border: 2px solid #f890a8;
     font-weight: bold;
     font-family: 'Mono', sans-serif;
-    border: 2px solid #f890a8;
 }
 
 button:hover {
     background-color: #f890a8;
     color: #381a3e;
-    border: 3px solid #f890a8;
-    font-size: 10.5px;
 }
 
+/* Form container styling */
+.form-container {
+    position: fixed; /* Keep form fixed at the top */
+    top: 0; /* Aligns with the top */
+    left: 0;
+    right: 0;
+    background-color: #4a2c53; /* Matches login form background */
+    padding: 10px;
+    z-index: 10; /* Ensure it's above other content */
+}
+
+/* Form input styles */
+input[type="text"],
+select {
+    padding: 10px;
+    border: 1px solid #8b506d; /* Matching border color */
+    border-radius: 4px;
+    width: 60%;
+    font-family: 'Mono', sans-serif; /* Ensure font consistency */
+}
+
+/* Button container for category selection */
+.button-container {
+    position: fixed; /* Keep buttons fixed under the form */
+    top: 60px; /* Adjust this based on the height of the form */
+    left: 0;
+    right: 0;
+    background-color: #4a2c53; /* Match your design */
+    padding: 10px;
+    z-index: 10;
+}
+
+/* Video grid styles */
+.video-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    margin-top: 120px; /* Ensure grid starts below the fixed buttons */
+}
+
+.video-item {
+    width: calc(50% - 10px); /* 50% width minus margin */
+    margin-bottom: 20px; /* Space between rows */
+    box-sizing: border-box; /* Include padding and border in the width */
+}
+
+/* Thumbnail image styles */
+.thumbnail img {
+    width: 100%; /* Make the image responsive */
+    height: auto; /* Keep the aspect ratio */
+}
+
+/* Login/logout and add video button styles */
 .login-logout-button,
 .add-video-button {
     position: fixed;
@@ -67,9 +121,9 @@ button:hover {
     text-align: center;
     font-size: 16px;
     border-radius: 4px;
-    font-family: 'Mono', sans-serif;
     border: 2px solid #f890a8;
     cursor: pointer;
+    z-index: 20; /* Ensure these are above other content */
 }
 
 .login-logout-button {
@@ -86,16 +140,16 @@ button:hover {
 .add-video-button:hover {
     background-color: #f890a8;
     color: #381a3e;
-    border: 3px solid #f890a8;
 }
 
+/* Login form styles */
 .login-form {
     background-color: #4a2c53;
     padding: 20px;
     border-radius: 8px;
     display: inline-block;
     text-align: left;
-    margin-top: 50px;
+    margin-top: 50px; /* Space above the form */
 }
 
 .login-form label {
