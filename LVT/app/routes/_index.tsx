@@ -4,13 +4,15 @@ import { useLoaderData, useActionData, Form } from "@remix-run/react";
 import { useState } from "react";
 import axios from "axios";
 import { prisma } from "../../prisma/prisma.server";
+// eslint-disable-next-line import/no-unresolved
 import { requireUserId } from "~/utils/auth.server";
 
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
-export const loader: LoaderFunction = async () => {
+export const loader: LoaderFunction = async ({ request }) => {
+  const userId = await requireUserId(request); // Check if user is logged in
   const videos = await prisma.video.findMany();
-  return json(videos);
+  return json({ videos, userId });
 };
 
 export const action: ActionFunction = async ({ request }) => {
@@ -30,7 +32,7 @@ export const action: ActionFunction = async ({ request }) => {
   if (!videoId) {
     return json({ error: "Invalid YouTube URL" }, { status: 400 });
   }
-  
+
   const ampersandPosition = videoId.indexOf("&");
   if (ampersandPosition !== -1) {
     videoId = videoId.substring(0, ampersandPosition);
@@ -73,12 +75,17 @@ interface Video {
   category: string;
 }
 
+interface LoaderData {
+  videos: Video[];
+  userId: string | null; // Change to allow null for logged out users
+}
+
 interface ActionData {
   error?: string;
 }
 
 export default function Videos({ setPage, setData }: VideosProps) {
-  const videos = useLoaderData<Video[]>();
+  const { videos, userId } = useLoaderData<LoaderData>();
   const actionData = useActionData<ActionData>();
   const [category, setCategory] = useState("Videogames");
 
@@ -86,20 +93,23 @@ export default function Videos({ setPage, setData }: VideosProps) {
     <div>
       <h1>Long Video Theater</h1>
       
-      {/* Add Video Form */}
-      <div className="add-video-container">
-        <Form method="post">
-          <input type="text" name="url" placeholder="YouTube Video URL" required />
-          <select name="category" required>
-            <option value="" disabled selected>Select a category</option>
-            <option value="Videogames">Videogames</option>
-            <option value="Anime/Manga">Anime/Manga</option>
-            <option value="Alternate Reality Game">Alternate Reality Game</option>
-            <option value="Digital">Digital Horror</option>
-          </select>
-          <button type="submit">Add Video</button>
-        </Form>
-      </div>
+      {/* Add Video Form: Only show if the user is logged in */}
+      {userId && (
+        <div className="add-video-container">
+          <Form method="post">
+            <input type="text" name="url" placeholder="YouTube Video URL" required />
+            <select name="category" required defaultValue="">
+  <option value="" disabled>Select a category</option>
+  <option value="Videogames">Videogames</option>
+  <option value="Anime/Manga">Anime/Manga</option>
+  <option value="Alternate Reality Game">Alternate Reality Game</option>
+  <option value="Digital">Digital Horror</option>
+</select>
+
+            <button type="submit">Add Video</button>
+          </Form>
+        </div>
+      )}
 
       {/* Category Buttons */}
       <div className="category-buttons">
