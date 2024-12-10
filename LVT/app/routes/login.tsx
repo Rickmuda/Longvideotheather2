@@ -1,6 +1,6 @@
-import { ActionFunction } from "@remix-run/node";
+import { json, ActionFunction } from "@remix-run/node";
 import { Form, useActionData } from "@remix-run/react";
-import { login } from "../utils/auth.server";
+import { login, createUserSession } from "../utils/auth.server";
 
 export const action: ActionFunction = async ({ request }) => {
   const formData = await request.formData();
@@ -10,15 +10,15 @@ export const action: ActionFunction = async ({ request }) => {
   console.log(`Login attempt: ${email}`);
 
   if (typeof email !== "string" || typeof password !== "string") {
-    return { error: "Invalid form data" };
+    return json({ error: "Invalid form data" }, { status: 400 });
   }
 
-  const userSession = await login(email, password);
-  if (!userSession) {
-    return { error: "Invalid email or password" };
+  const user = await login(email, password);
+  if (!user) {
+    return json({ error: "Invalid email or password" }, { status: 400 });
   }
 
-  return userSession; // This will redirect the user
+  return createUserSession(user.id, "/");
 };
 
 export default function Login() {
@@ -30,17 +30,19 @@ export default function Login() {
       <Form method="post" className="login-form">
         <div>
           <label>
-            Email: <input type="email" name="email" required autoComplete="email" />
+            Email:
+            <input type="email" name="email" required />
           </label>
         </div>
         <div>
           <label>
-            Password: <input type="password" name="password" required autoComplete="current-password" />
+            Password:
+            <input type="password" name="password" required />
           </label>
         </div>
+        {actionData?.error && <p style={{ color: "red" }}>{actionData.error}</p>}
         <button type="submit">Login</button>
       </Form>
-      {actionData?.error && <p style={{ color: "red" }}>{actionData.error}</p>}
     </div>
   );
 }

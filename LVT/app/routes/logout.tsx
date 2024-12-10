@@ -1,18 +1,27 @@
 // app/routes/logout.tsx
 import { redirect } from "@remix-run/node";
-// eslint-disable-next-line import/no-unresolved
-import { requireUserId } from "~/utils/auth.server";
+import { destroySession, getSession, requireUserId } from "../utils/auth.server";
 
-import type { ActionFunction } from "@remix-run/node";
+import type { ActionFunction, LoaderFunction } from "@remix-run/node";
 
 export const action: ActionFunction = async ({ request }) => {
   await requireUserId(request);
-  
-  // Your logout logic here, e.g., clearing the session
-  // Example: await logoutUser(request);
 
-  // Redirect to the main page after logging out
-  return redirect("/"); // Assuming index.tsx is your main page
+  const session = await getSession(request.headers.get("Cookie") || "");
+  return redirect("/", {
+    headers: {
+      "Set-Cookie": await destroySession(session),
+    },
+  });
+};
+
+export const loader: LoaderFunction = async ({ request }) => {
+  const session = await getSession(request.headers.get("Cookie") || "");
+  return redirect("/", {
+    headers: {
+      "Set-Cookie": await destroySession(session),
+    },
+  });
 };
 
 export default function Logout() {

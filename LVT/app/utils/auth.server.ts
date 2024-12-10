@@ -31,7 +31,7 @@ export async function destroySession(session: Session) {
 export async function requireUserId(request: Request) {
   const session = await getSession(request.headers.get("Cookie") || "");
   const userId = session.get("userId");
-  if (!userId) return null; // Change this line to return null instead of redirecting
+  if (!userId) throw redirect("/login");
   return userId;
 }
 
@@ -41,20 +41,16 @@ interface User {
 }
 
 export async function login(email: string, password: string): Promise<User | null> {
-  console.log(`Attempting login for email: ${email}`);
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) {
-    console.log("User not found");
     return null;
   }
 
   const isValid = await bcrypt.compare(password, user.password);
   if (!isValid) {
-    console.log("Invalid password");
     return null;
   }
 
-  console.log("Login successful");
   return { id: user.id, email: user.email };
 }
 
@@ -71,7 +67,7 @@ export async function createUserSession(userId: string, redirectTo: string) {
 export async function getUserId(request: Request) {
   const session = await storage.getSession(request.headers.get("Cookie"));
   const userId = session.get("userId");
-  if (!userId || typeof userId !== "string") return null;
+  if (!userId || typeof userId !== "number") return null;
   return userId;
 }
 

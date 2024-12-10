@@ -1,33 +1,34 @@
 // app/routes/videos.tsx
 import { json, LoaderFunction, ActionFunction } from "@remix-run/node";
-import { useLoaderData, useActionData, Form, Link } from "@remix-run/react";
-import { useState, useEffect } from "react";
+import { useLoaderData, useActionData, Form } from "@remix-run/react";
+import { useState } from "react";
 import axios from "axios";
 import { prisma } from "../../prisma/prisma.server";
-import { getUserId } from "../utils/auth.server";
+// eslint-disable-next-line import/no-unresolved
+import { requireUserId } from "~/utils/auth.server";
+import { Link } from "react-router-dom";
 
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
 export const loader: LoaderFunction = async ({ request }) => {
-  const userId = await getUserId(request);
+  const userId = await requireUserId(request); // Check if user is logged in
   const videos = await prisma.video.findMany();
   return json({ videos, userId });
 };
 
 export const action: ActionFunction = async ({ request }) => {
-  const userId = await getUserId(request);
-  if (!userId) {
-    return json({ error: "You must be logged in to add a video" }, { status: 401 });
-  }
+  await requireUserId(request);
 
   const formData = await request.formData();
   const url = formData.get("url");
   const category = formData.get("category");
 
+  // Check if URL and category are valid
   if (typeof url !== "string" || !url.trim() || typeof category !== "string") {
     return json({ error: "Invalid form data" }, { status: 400 });
   }
 
+  // Check if the URL is a valid YouTube link
   let videoId = url.split("v=")[1];
   if (!videoId) {
     return json({ error: "Invalid YouTube URL" }, { status: 400 });
@@ -77,39 +78,24 @@ interface Video {
 
 interface LoaderData {
   videos: Video[];
-  userId: string | null; 
+  userId: string | null; // Change to allow null for logged out users
 }
 
 interface ActionData {
   error?: string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export default function Videos({ setPage, setData }: VideosProps) {
   const { videos, userId } = useLoaderData<LoaderData>();
   const actionData = useActionData<ActionData>();
   const [category, setCategory] = useState("Videogames");
-  const [isLoggedIn, setIsLoggedIn] = useState(!!userId);
-
-  useEffect(() => {
-    setIsLoggedIn(!!userId);
-  }, [userId]);
-
-  const handleLogout = async () => {
-    try {
-      await fetch('/logout', { method: 'POST' });
-      setIsLoggedIn(false);
-      window.location.reload();
-    } catch (error) {
-      console.error('Error logging out:', error);
-    }
-  };
 
   return (
     <div>
       <h1>Long Video Theater</h1>
       
-      {isLoggedIn ? (
+      {/* Add Video Form: Only show if the user is logged in */}
+      {userId ? (
         <>
           <div className="add-video-container">
             <Form method="post">
@@ -125,15 +111,20 @@ export default function Videos({ setPage, setData }: VideosProps) {
             </Form>
           </div>
           <div className="logout-container">
-            <button onClick={handleLogout}>Logout</button>
+            <Link to="/logout">
+              <button>Logout</button>
+            </Link>
           </div>
         </>
       ) : (
         <div className="login-container">
-          <button onClick={() => window.location.href = '/login'}>Login</button>
+          <Link to="/login">
+            <button>Login</button>
+          </Link>
         </div>
       )}
 
+      {/* Category Buttons */}
       <div className="category-buttons">
         <button onClick={() => setCategory("Videogames")}>Videogames</button>
         <button onClick={() => setCategory("Anime/Manga")}>Anime/Manga</button>
@@ -141,19 +132,26 @@ export default function Videos({ setPage, setData }: VideosProps) {
         <button onClick={() => setCategory("Digital")}>Digital Horror</button>
       </div>
 
-      <div className="videos-list">
-        {videos.filter(video => video.category === category).map(video => (
-          <div key={video.id} className="video-item">
-            <a href={video.url} target="_blank" rel="noreferrer">
-              <img src={video.thumbnail} alt={video.title} />
-            </a>
-            <h3>{video.title}</h3>
-            <p>{video.creator}</p>
-          </div>
-        ))}
+      {/* Video Grid */}
+      <div className="video-grid">
+        {videos && videos.length > 0 ? (
+          videos.filter(video => video.category === category).map(video => (
+            <div key={video.id} className="video-item">
+              <h2>{video.title}</h2>
+              <div className='thumbnail'>
+                <button onClick={() => { setPage("explenation"); setData(video); }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+                  <a href={video.url} target="_blank" rel="noopener noreferrer">
+                    <img src={video.thumbnail} alt={video.title} />
+                  </a>
+                </button>
+              </div>
+            </div>
+          ))
+        ) : (
+          <p>No videos found.</p>
+        )}
       </div>
-
-      {actionData?.error && <p style={{ color: "red" }}>{actionData.error}</p>}
+      {actionData?.error && <p>{actionData.error}</p>}
     </div>
   );
 }

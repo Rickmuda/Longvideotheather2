@@ -5,6 +5,7 @@ interface DataProps {
   thumbnail: string;
   title: string;
   creator: string;
+  caption: string;
 }
 
 interface ExplenationProps {
@@ -20,6 +21,7 @@ export default function Explenation({ setPage, Data }: ExplenationProps) {
       </a>
       <h3>{Data.title}</h3>
       <h1>{Data.creator}</h1>
+      <h2>{Data.caption}</h2>
       <button onClick={() => setPage("essays")}>Back</button>
     </div>
   );
