@@ -74,9 +74,10 @@ button:hover {
 input[type="text"],
 select {
     padding: 10px;
-    border: 1px solid #8b506d; /* Matching border color */
+    margin: 10px;
+    border: 2px solid #8b506d; /* Matching border color */
     border-radius: 4px;
-    width: 60%;
+    width: 30%;
     font-family: 'Mono', sans-serif; /* Ensure font consistency */
 }
 
@@ -148,7 +149,7 @@ select {
     padding: 20px;
     border-radius: 8px;
     display: inline-block;
-    text-align: left;
+    text-align: center;
     margin-top: 50px; /* Space above the form */
 }
 
@@ -160,8 +161,9 @@ select {
 
 .login-form input[type="email"],
 .login-form input[type="password"] {
-    width: 100%;
+    width: 80%;
     padding: 10px;
+    margin-top: 10px;
     margin-bottom: 20px;
     border: 1px solid #8b506d;
     border-radius: 4px;
@@ -170,7 +172,7 @@ select {
 }
 
 .login-form button {
-    width: 100%;
+    width: 80%;
     padding: 10px;
     background-color: #f6edc1;
     color: #381a3e;

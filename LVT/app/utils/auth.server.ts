@@ -1,5 +1,5 @@
 // app/utils/auth.server.ts
-import { createCookieSessionStorage, redirect } from "@remix-run/node";
+import { createCookieSessionStorage, redirect, Session } from "@remix-run/node";
 import bcrypt from "bcryptjs";
 import { prisma } from "../../prisma/prisma.server";
 
@@ -15,20 +15,50 @@ const storage = createCookieSessionStorage({
     secrets: [sessionSecret],
     sameSite: "lax",
     path: "/",
-    maxAge: 60 * 60 * 24 * 7, // 1 week
+    maxAge: 60 * 60 * 24 * 30, // 1 month
     httpOnly: true,
   },
 });
 
-export async function login(email: string, password: string) {
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user || !(await bcrypt.compare(password, user.password))) {
-    return null;
-  }
-  return createUserSession(user.id, "/");
+export async function getSession(cookieHeader: string) {
+  return storage.getSession(cookieHeader);
 }
 
-export async function createUserSession(userId: number, redirectTo: string) {
+export async function destroySession(session: Session) {
+  return storage.destroySession(session);
+}
+
+export async function requireUserId(request: Request) {
+  const session = await getSession(request.headers.get("Cookie") || "");
+  const userId = session.get("userId");
+  if (!userId) return null; // Change this line to return null instead of redirecting
+  return userId;
+}
+
+interface User {
+  id: string;
+  email: string;
+}
+
+export async function login(email: string, password: string): Promise<User | null> {
+  console.log(`Attempting login for email: ${email}`);
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) {
+    console.log("User not found");
+    return null;
+  }
+
+  const isValid = await bcrypt.compare(password, user.password);
+  if (!isValid) {
+    console.log("Invalid password");
+    return null;
+  }
+
+  console.log("Login successful");
+  return { id: user.id, email: user.email };
+}
+
+export async function createUserSession(userId: string, redirectTo: string) {
   const session = await storage.getSession();
   session.set("userId", userId);
   return redirect(redirectTo, {
@@ -41,16 +71,7 @@ export async function createUserSession(userId: number, redirectTo: string) {
 export async function getUserId(request: Request) {
   const session = await storage.getSession(request.headers.get("Cookie"));
   const userId = session.get("userId");
-  if (!userId || typeof userId !== "number") return null;
-  return userId;
-}
-
-export async function requireUserId(request: Request, redirectTo: string = new URL(request.url).pathname) {
-  const userId = await getUserId(request);
-  if (!userId) {
-    const searchParams = new URLSearchParams([["redirectTo", redirectTo]]);
-    throw redirect(`/login?${searchParams}`);
-  }
+  if (!userId || typeof userId !== "string") return null;
   return userId;
 }
 
@@ -74,4 +95,3 @@ export async function createUser(email: string, password: string) {
   console.log(`User created: ${email}`);
   return user;
 }
-
